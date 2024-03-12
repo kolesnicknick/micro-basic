@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const { randomBytes } = require('crypto');
+const axios = require("axios");
 
 // Middleware that parses body of incoming requests
 app.use(express.json());
@@ -16,6 +17,10 @@ app.use(cors(corsOptions)); // Use the cors middleware with your options
 
 const commentsByPostId = {};
 
+app.post('/events', (req, res) => {
+    console.log('Event received:', req.body.type);
+    res.send({});
+});
 
 app.get('/posts/:id/comments/', (req, res) => {
     res.send(commentsByPostId[req.params.id] || []);
@@ -31,6 +36,13 @@ app.post('/posts/:id/comments/', (req, res) => {
     comments.push({ id: commentId, content });
 
     commentsByPostId[req.params.id] = comments;
+
+    axios.post('http://localhost:4005/events', {
+        type: 'CommentCreated',
+        data: { id: commentId, content, postId: req.params.id }
+    }).catch((err) => {
+        console.log(err.message);
+    });
 
     res.status(201).send(comments);
 });
